@@ -1,0 +1,168 @@
+/* Fondo general */
+body {
+  background-color: #f8f9fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+.sidebar {
+  height: 100vh;
+  width: 240px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #0d6efd;
+  color: white;
+  padding-top: 60px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.sidebar h4 {
+  font-weight: bold;
+}
+
+.sidebar a {
+  color: white;
+  display: block;
+  padding: 12px 20px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.sidebar a:hover {
+  background-color: #0b5ed7;
+}
+
+.sidebar a.active {
+  background-color: #084298;
+  font-weight: bold;
+}
+
+/* Contenido principal */
+.main {
+  margin-left: 240px;
+  padding: 20px;
+}
+
+/* Tarjetas */
+.card {
+  border-radius: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Título principal */
+.main h2 {
+  font-weight: 600;
+  color: #0d6efd;
+  border-bottom: 2px solid #0d6efd;
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+}
+
+/* Tablas */
+table {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.table th {
+  background-color: #0d6efd;
+  color: white;
+  vertical-align: middle;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Formularios */
+form input,
+form select,
+form textarea {
+  border-radius: 0.5rem;
+  box-shadow: none;
+  border: 1px solid #ced4da;
+}
+
+form button {
+  border-radius: 0.5rem;
+}
+
+/* Botones */
+.btn {
+  border-radius: 0.5rem;
+  transition: all 0.3s ease-in-out;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+/* Responsive para dispositivos móviles */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .main {
+    margin-left: 0;
+  }
+}
+
+    body {
+      background-color: #f0f2f5;
+    }
+    .login-container {
+      max-width: 400px;
+      margin: auto;
+      margin-top: 100px;
+      padding: 30px;
+      background-color: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .login-container h2 {
+      text-align: center;
+      color: #0d6efd;
+      margin-bottom: 25px;
+    }
+    .btn-login {
+      border-radius: 0.5rem;
+    }
+
+    body {
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.carousel img {
+  height: 100px;
+  object-fit: cover;
+  
+}
+
+#nosotros p {
+  text-align: justify;
+}
+
+.card h5 {
+  font-size: 1.1rem;
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+.card p {
+  font-size: 0.95rem;
+}
+
+.sidebar i {
+  margin-right: 8px;
+}
+
