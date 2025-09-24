@@ -1,41 +1,40 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <h1>Editar Producto</h1>
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Detalle del Producto</h2>
 
-    <form action="{{ route('productos.update', $producto->id_producto) }}" method="POST">
-        @csrf
-        @method('PUT')
-
-        <div class="mb-3">
-            <label for="nombre_producto">Nombre del Producto</label>
-            <input type="text" name="nombre_producto" value="{{ $producto->nombre_producto }}" class="form-control" required>
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">{{ $producto->nombre_producto }}</h4>
         </div>
-
-        <div class="mb-3">
-            <label for="id_categoria">Categoría</label>
-            <select name="id_categoria" class="form-control" required>
-                @foreach($categorias as $categoria)
-                    <option value="{{ $categoria->id_categoria }}" {{ $producto->id_categoria == $categoria->id_categoria ? 'selected' : '' }}>
-                        {{ $categoria->nombre_categoria }}
-                    </option>
-                @endforeach
-            </select>
+        <div class="card-body">
+            <p><strong>🆔 ID:</strong> {{ $producto->id_producto }}</p>
+            <p><strong>📦 Categoría:</strong> {{ $producto->categoria->nombre_categoria ?? 'Sin categoría' }}</p>
+            <p><strong>📝 Descripción:</strong> {{ $producto->descripcion ?? 'No especificada' }}</p>
+            <p><strong>📅 Fecha de Vencimiento:</strong> 
+                {{ $producto->fecha_vencimiento ? \Carbon\Carbon::parse($producto->fecha_vencimiento)->format('d/m/Y') : 'No aplica' }}
+            </p>
+            <p><strong>🔢 Cantidad:</strong> {{ $producto->cantidad }}</p>
+            <p><strong>💲 Precio:</strong> ${{ number_format($producto->precio, 2) }}</p>
         </div>
-
-        <div class="mb-3">
-            <label for="cantidad">Cantidad</label>
-            <input type="number" name="cantidad" value="{{ $producto->cantidad }}" class="form-control" required>
+        <div class="card-footer d-flex justify-content-between">
+            <a href="{{ route('productos.index') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <div>
+                <a href="{{ route('productos.edit', $producto->id_producto) }}" class="btn btn-warning">
+                    <i class="bi bi-pencil-square"></i> Editar
+                </a>
+                <form action="{{ route('productos.destroy', $producto->id_producto) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('¿Seguro que deseas eliminar este producto?')">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                </form>
+            </div>
         </div>
-
-        <div class="mb-3">
-            <label for="precio">Precio</label>
-            <input type="number" step="0.01" name="precio" value="{{ $producto->precio }}" class="form-control" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Actualizar</button>
-        <a href="{{ route('productos.index') }}" class="btn btn-secondary">Cancelar</a>
-    </form>
+    </div>
 </div>
 @endsection

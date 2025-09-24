@@ -2,16 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Paciente extends Model
 {
-    use HasFactory;
-
-    protected $table = 'paciente'; // Nombre de la tabla en la base de datos
+    protected $table = 'paciente';
     protected $primaryKey = 'id_paciente';
-    public $timestamps = false; // No usamos created_at / updated_at
+    public $timestamps = false;
 
     protected $fillable = [
         'nombre',
@@ -21,29 +18,27 @@ class Paciente extends Model
         'direccion',
         'fecha_registro',
         'telefono',
-        'id_acompanante',
         'id_usuario',
         'eps',
         'rh',
-        'estado',
-        
+        'estado'
     ];
 
-    // Relación con usuario
+    // 🔹 Relación con Usuario
     public function usuario()
     {
         return $this->belongsTo(User::class, 'id_usuario', 'id_usuario');
     }
 
-    // Scope para traer solo los pacientes activos
-    public function scopeActivas($query)
+    // 🔹 Relación con Citas
+    public function citas()
     {
-        return $query->where('estado', 'activo');
+        return $this->hasMany(Cita::class, 'id_paciente', 'id_paciente');
     }
 
-    // Scope para traer solo los pacientes inactivos
-    public function scopeInactivas($query)
+    // 🔹 Relación con Historial Médico
+    public function historiales()
     {
-        return $query->where('estado', 'inactivo');
+        return $this->hasMany(Historial::class, 'id_paciente', 'id_paciente');
     }
 }

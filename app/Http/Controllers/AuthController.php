@@ -6,16 +6,19 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Paciente;
+use App\Models\Medico;
+use App\Models\Secretaria;
+use App\Models\Rol;
+use App\Models\Especialidad;
 
 class AuthController extends Controller
 {
-    // Mostrar formulario de login
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    // Procesar login
     public function login(Request $request)
     {
         $request->validate([
@@ -23,61 +26,103 @@ class AuthController extends Controller
             'contraseña' => 'required|string'
         ]);
 
-        // Buscar usuario por nombre_usuario
         $user = User::where('nombre_usuario', $request->nombre_usuario)->first();
 
-        // Verificar usuario y contraseña
-        if ($user && Hash::check($request->contraseña, $user->contraseña)) {
-
-            // Verificar si el usuario está activo
-            if ($user->estado != "activo") {
-                return back()->withErrors([
-                    'nombre_usuario' => 'Usuario inactivo, contacte al administrador.'
-                ]);
-            }
-
-            // Iniciar sesión
-            Auth::login($user);
-
-            // Redirigir al dashboard según el rol
-            return redirect()->route('dashboard');
+        if (!$user || !Hash::check($request->contraseña, $user->contraseña)) {
+            return back()->withErrors([
+                'nombre_usuario' => 'Credenciales incorrectas.'
+            ])->withInput();
         }
 
-        return back()->withErrors([
-            'nombre_usuario' => 'Credenciales incorrectas'
-        ])->withInput();
+        if (trim(strtolower($user->estado)) != 'activo') {
+            return back()->withErrors([
+                'nombre_usuario' => 'Usuario inactivo, contacte al administrador.'
+            ]);
+        }
+
+        Auth::login($user);
+        return redirect()->route('dashboard');
     }
 
-    // Mostrar formulario de registro
     public function showRegisterForm()
     {
-        return view('auth.register');
+        $roles = Rol::all();
+        $especialidades = Especialidad::all();
+        return view('auth.register', compact('roles', 'especialidades'));
     }
 
-    // Procesar registro
     public function register(Request $request)
     {
         $request->validate([
             'nombre_usuario' => 'required|string|unique:usuarios,nombre_usuario|max:255',
-            'contraseña' => 'required|string|min:6|confirmed',
-            'id_rol' => 'required|integer|exists:roles,id_rol'
+            'password' => 'required|string|min:6|confirmed',
+            'id_rol' => 'required|integer|exists:roles,id_rol',
+            'nombre' => 'required|string|max:255',
+            'apellidos' => 'required|string|max:255',
+            'correo' => 'required|email|max:255',
+
+            // Campos de Médico solo si id_rol = 2
+            'id_especialidad' => 'required_if:id_rol,2|exists:especialidad,id_especialidad',
+            'telefono_medico' => 'required_if:id_rol,2|string|max:50',
+
+            // Campos de Paciente solo si id_rol = 4
+            'telefono' => 'required_if:id_rol,4|string|max:50',
+            'eps' => 'required_if:id_rol,4|string|max:255',
+            'rh' => 'required_if:id_rol,4|string|max:5',
         ]);
 
-        // Crear usuario
+        $estado = 'activo'; // Cambia a 'activo' si quieres login inmediato
+
         $user = User::create([
             'nombre_usuario' => $request->nombre_usuario,
-            'contraseña' => Hash::make($request->contraseña),
+            'contraseña' => Hash::make($request->password),
             'id_rol' => $request->id_rol,
-            'estado' => 1
+            'estado' => $estado,
         ]);
 
-        // Loguear automáticamente al usuario (opcional)
-        Auth::login($user);
+        // Crear datos según el rol
+        if ($request->id_rol == 2) {
+            Medico::create([
+                'id_usuario' => $user->id_usuario,
+                'nombre' => $request->nombre,
+                'apellidos' => $request->apellidos,
+                'telefono' => $request->telefono_medico,
+                'correo' => $request->correo,
+                'estado' => $estado,
+                'id_especialidad' => $request->id_especialidad,
+            ]);
+        } elseif ($request->id_rol == 3) {
+            Secretaria::create([
+                'id_usuario' => $user->id_usuario,
+                'nombre' => $request->nombre,
+                'apellidos' => $request->apellidos,
+                'telefono' => $request->input('telefono', ''),
+                'fecha_ingreso' => now(),
+                'estado' => $estado,
+                'correo' => $request->correo,
+            ]);
+        } elseif ($request->id_rol == 4) {
+            Paciente::create([
+                'id_usuario' => $user->id_usuario,
+                'nombre' => $request->nombre,
+                'apellidos' => $request->apellidos,
+                'correo' => $request->correo,
+                'telefono' => $request->telefono,
+                'eps' => $request->eps,
+                'rh' => $request->rh,
+                'estado' => $estado,
+            ]);
+        }
 
-        return redirect()->route('dashboard');
+        // Solo iniciar sesión si el usuario es activo
+        if ($estado === 'activo') {
+            Auth::login($user);
+            return redirect()->route('dashboard')->with('success', 'Usuario registrado y autenticado.');
+        }
+
+        return redirect()->route('login')->with('success', 'Usuario registrado. Espere aprobación del administrador.');
     }
 
-    // Cerrar sesión
     public function logout(Request $request)
     {
         Auth::logout();

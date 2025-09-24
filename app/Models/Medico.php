@@ -9,9 +9,9 @@ class Medico extends Model
 {
     use HasFactory;
 
-    protected $table = 'medicos'; // o 'medicos' según tu BD
-    protected $primaryKey = 'id_doctor';
-    public $timestamps = false;
+    protected $table = 'medicos';        // nombre de la tabla
+    protected $primaryKey = 'id_doctor'; // clave primaria real
+    public $timestamps = false;          // tu tabla no tiene created_at / updated_at
 
     protected $fillable = [
         'nombre',
@@ -32,7 +32,7 @@ class Medico extends Model
     // Scope para traer solo los activos
     public function scopeActivos($query)
     {
-        return $query->where('estado', 'activo'); // asegúrate que el campo se llame así
+        return $query->where('estado', 'activo');
     }
 
     // Relación con especialidad
@@ -47,9 +47,15 @@ class Medico extends Model
         return $this->hasMany(Cita::class, 'id_doctor', 'id_doctor');
     }
 
-    public function getRouteKeyName()
-{
-    return 'id_doctor';
-}
+    // Relación con horarios
+    public function horarios()
+    {
+        return $this->hasMany(Horario::class, 'id_doctor', 'id_doctor');
+    }
 
+    // Para rutas con route-model binding
+    public function getRouteKeyName()
+    {
+        return 'id_doctor';
+    }
 }

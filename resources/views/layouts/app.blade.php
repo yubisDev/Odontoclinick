@@ -11,14 +11,15 @@
     body {
         min-height: 100vh;
         display: flex;
-        background-color: #f8f9fa;
+        background-color: #f0f2f5; /* Color de fondo más suave */
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     /* Sidebar */
     .sidebar {
         width: 220px;
-        background-color: #0d6efd;
+        /* Gradiente de color y sombra */
+        background-image: linear-gradient(to bottom, #0d6efd, #004d99); 
         color: white;
         min-height: 100vh;
         transition: all 0.3s;
@@ -27,6 +28,8 @@
         flex-direction: column;
         justify-content: space-between;
         padding: 1rem;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+        border-radius: 0 1rem 1rem 0; /* Bordes redondeados */
     }
 
     .sidebar a {
@@ -36,13 +39,13 @@
     }
 
     .sidebar a:hover {
-        background-color: #025ce2;
+        background-color: rgba(255, 255, 255, 0.15); /* Fondo más suave al pasar el cursor */
         border-radius: 0.5rem;
         padding-left: 1.2rem;
     }
 
     .sidebar .nav-link.active {
-        background-color: #025ce2;
+        background-color: rgba(255, 255, 255, 0.2);
         font-weight: 500;
         border-radius: 0.5rem;
     }
@@ -55,34 +58,46 @@
     .sidebar hr {
         border-color: rgba(255,255,255,0.2);
     }
+    
+    /* Animación de íconos */
+    .sidebar a i {
+        transition: transform 0.2s;
+    }
+    .sidebar a:hover i {
+        transform: scale(1.1);
+    }
 
-    /* Content */
+    /* Contenido */
     .content {
         flex: 1;
         padding: 2rem;
         overflow-x: auto;
     }
 
-    /* Submenu arrow rotation */
+    /* Flecha de menú */
     .sidebar .collapse.show + a .bi-chevron-down {
         transform: rotate(180deg);
         transition: transform 0.3s;
     }
 
-    /* Logout button */
+    /* Botón de cierre de sesión con efecto visual */
     .logout-btn {
         margin-top: 1rem;
         width: 100%;
         font-weight: 500;
+        box-shadow: 0 0 10px rgba(255, 0, 0, 0);
+        transition: box-shadow 0.3s ease-in-out;
+    }
+
+    .logout-btn:hover {
+        box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
     }
 </style>
 </head>
 <body>
 
-<!-- Sidebar -->
 <div class="sidebar d-flex flex-column">
     <div>
-        {{-- Enlace al dashboard en lugar de la página principal --}}
         <a href="{{ route('dashboard') }}" class="d-flex align-items-center mb-4 text-white text-decoration-none">
             <span class="fs-4 fw-bold">Odontoclinick</span>
         </a>
@@ -95,17 +110,12 @@
             @endphp
 
             <ul class="nav nav-pills flex-column mb-auto">
-
-                {{-- Dashboard --}}
                 <li class="mb-1">
                     <a href="{{ route('dashboard') }}" class="nav-link text-white">
                         <i class="bi bi-speedometer2 me-2"></i> Dashboard {{ $rolesText[$rol] ?? '' }}
                     </a>
                 </li>
-
-                {{-- Admin --}}
                 @if($rol == 1)
-                    {{-- Médicos --}}
                     <li class="mb-1">
                         <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#medicosSub" role="button">
                             <span><i class="bi bi-person-badge me-2"></i>Médicos</span>
@@ -118,8 +128,11 @@
                             </ul>
                         </div>
                     </li>
-
-                    {{-- Secretarias --}}
+                    <li class="mb-1">
+                        <a href="{{ route('horarios.admin.panel') }}" class="nav-link text-white">
+                            <i class="bi bi-clock me-2"></i>Asignar Horarios a Médicos
+                        </a>
+                    </li>
                     <li class="mb-1">
                         <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#secretariasSub" role="button">
                             <span><i class="bi bi-person-lines-fill me-2"></i>Secretarias</span>
@@ -132,32 +145,50 @@
                             </ul>
                         </div>
                     </li>
-
                     <li class="mb-1"><a href="{{ route('tratamientos.index') }}" class="nav-link text-white"><i class="bi bi-journal-medical me-2"></i>Tratamientos</a></li>
                     <li class="mb-1"><a href="{{ route('productos.index') }}" class="nav-link text-white"><i class="bi bi-bag-check me-2"></i>Productos</a></li>
                     <li class="mb-1"><a href="{{ route('inventario.index') }}" class="nav-link text-white"><i class="bi bi-box-seam me-2"></i>Inventario</a></li>
-
-                {{-- Médico --}}
                 @elseif($rol == 2)
-                    <li class="mb-1"><a href="{{ route('citas.index') }}" class="nav-link text-white"><i class="bi bi-calendar-check me-2"></i>Citas</a></li>
-                    <li class="mb-1"><a href="{{ route('pacientes.index') }}" class="nav-link text-white"><i class="bi bi-people me-2"></i>Pacientes</a></li>
-
-                {{-- Secretaria --}}
+                    <li class="mb-1">
+                        <a href="{{ route('citas.index') }}" class="nav-link text-white">
+                            <i class="bi bi-calendar-check me-2"></i>Citas
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="{{ route('pacientes.index') }}" class="nav-link text-white">
+                            <i class="bi bi-people me-2"></i>Pacientes
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="{{ route('historial.index_all') }}" class="nav-link text-white">
+                            <i class="bi bi-folder2-open me-2"></i>Historiales Clínicos
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="{{ route('horarios.medico.panel') }}" class="nav-link text-white">
+                            <i class="bi bi-clock me-2"></i>Mis Horarios
+                        </a>
+                    </li>
+                    <li class="mb-1">
+                        <a href="{{ route('medicos.perfil') }}" class="nav-link text-white">
+                            <i class="bi bi-person-circle me-2"></i>Mi Perfil
+                        </a>
+                    </li>
                 @elseif($rol == 3)
                     <li class="mb-1"><a href="{{ route('citas.index') }}" class="nav-link text-white"><i class="bi bi-calendar-check me-2"></i>Citas</a></li>
                     <li class="mb-1"><a href="{{ route('pacientes.index') }}" class="nav-link text-white"><i class="bi bi-people me-2"></i>Pacientes</a></li>
                     <li class="mb-1"><a href="{{ route('pagos.index') }}" class="nav-link text-white"><i class="bi bi-cash-stack me-2"></i>Pagos</a></li>
-
-                {{-- Paciente --}}
                 @elseif($rol == 4)
-                    <li class="mb-1"><a href="{{ route('pacientes.show', auth()->id()) }}" class="nav-link text-white"><i class="bi bi-person-circle me-2"></i>Mis Datos</a></li>
+                    <li class="mb-1">
+                        <a href="{{ route('pacientes.show', auth()->id()) }}" class="nav-link text-white">
+                            <i class="bi bi-person-circle me-2"></i>Mis Datos
+                        </a>
+                    </li>
                 @endif
-
             </ul>
         @endauth
     </div>
-
-    {{-- Logout --}}
+    
     <div>
         @auth
             <form action="{{ route('logout') }}" method="POST" onsubmit="return confirmLogout();">
@@ -168,15 +199,12 @@
     </div>
 </div>
 
-<!-- Contenido -->
 <div class="content">
     @yield('content')
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-// Confirmación al cerrar sesión
 function confirmLogout() {
     return confirm('¿Estás seguro que deseas cerrar sesión?');
 }

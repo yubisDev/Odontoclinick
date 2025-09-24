@@ -2,24 +2,24 @@
 
 @section('content')
 <div class="container">
-    <h1>Registrar Tratamiento</h1>
+    <h2 class="mb-4">Nuevo Tratamiento</h2>
 
     <form action="{{ route('tratamientos.store') }}" method="POST">
         @csrf
 
         <div class="mb-3">
-            <label for="nombre_tratamiento">Nombre del Tratamiento</label>
+            <label class="form-label">Nombre del Tratamiento</label>
             <input type="text" name="nombre_tratamiento" class="form-control" required>
         </div>
 
         <div class="mb-3">
-            <label for="descripcion">Descripción</label>
+            <label class="form-label">Descripción</label>
             <textarea name="descripcion" class="form-control"></textarea>
         </div>
 
         <div class="mb-3">
-            <label for="costo_tratamiento">Costo</label>
-            <input type="number" name="costo_tratamiento" step="0.01" class="form-control" required>
+            <label class="form-label">Costo</label>
+            <input type="number" step="0.01" name="costo_tratamiento" class="form-control" required>
         </div>
 
         <button type="submit" class="btn btn-success">Guardar</button>

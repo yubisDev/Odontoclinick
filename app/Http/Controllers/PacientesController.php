@@ -6,136 +6,206 @@ use App\Models\Paciente;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PacientesController extends Controller
 {
-    // Listado de pacientes
-    public function index()
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
     {
-        $pacientes_activas = Paciente::with('usuario')->where('estado', 'activo')->get();
-        $pacientes_inactivas = Paciente::with('usuario')->where('estado', 'inactivo')->get();
-
+        $search = $request->input('search');
+    
+        // Pacientes activos
+        $pacientes_activas = Paciente::where('estado', 'activo')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nombre', 'like', "%{$search}%")
+                      ->orWhere('apellidos', 'like', "%{$search}%")
+                      ->orWhere('correo', 'like', "%{$search}%")
+                      ->orWhere('telefono', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('id_paciente', 'asc')
+            ->get();
+        
+        // Pacientes inactivos
+        $pacientes_inactivas = Paciente::where('estado', 'inactivo')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nombre', 'like', "%{$search}%")
+                      ->orWhere('apellidos', 'like', "%{$search}%")
+                      ->orWhere('correo', 'like', "%{$search}%")
+                      ->orWhere('telefono', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('id_paciente', 'asc')
+            ->get();
+        
         return view('pacientes.index', compact('pacientes_activas', 'pacientes_inactivas'));
     }
 
-    // Formulario para crear
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function create()
     {
         return view('pacientes.create');
     }
 
-    // Guardar nuevo paciente
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function store(Request $request)
     {
+        // Validación para ambos registros
         $request->validate([
             'nombre' => 'required|string|max:50',
             'apellidos' => 'required|string|max:50',
             'fecha_nacimiento' => 'required|date',
-            'correo' => 'required|email|unique:paciente,correo',
-            'telefono' => 'nullable|string|max:15',
+            'correo' => 'required|email|max:100|unique:paciente,correo',
             'direccion' => 'nullable|string|max:255',
+            'telefono' => 'nullable|string|max:15',
             'eps' => 'nullable|string|max:50',
             'rh' => 'nullable|string|max:5',
             'nombre_usuario' => 'required|string|max:255|unique:usuarios,nombre_usuario',
             'contraseña' => 'required|string|min:6',
         ]);
 
-        // Crear usuario
-        $usuario = User::create([
-            'nombre_usuario' => $request->nombre_usuario,
-            'contraseña' => Hash::make($request->contraseña),
-            'id_rol' => 4, // Rol paciente
-            'estado' => 'activo', 
+        DB::transaction(function () use ($request) {
+            // 1. Crear el usuario en la tabla 'usuarios'
+            $user = User::create([
+                'nombre_usuario' => $request->nombre_usuario,
+                'contraseña' => Hash::make($request->contraseña),
+                'estado' => 'activo',
+                'id_rol' => 4, // El rol de paciente es 4
+            ]);
 
-        ]);
+            // 2. Crear el paciente y asociarlo con el ID del nuevo usuario
+            Paciente::create([
+                'nombre' => $request->nombre,
+                'apellidos' => $request->apellidos,
+                'fecha_nacimiento' => $request->fecha_nacimiento,
+                'correo' => $request->correo,
+                'direccion' => $request->direccion,
+                'fecha_registro' => now(),
+                'telefono' => $request->telefono,
+                'eps' => $request->eps,
+                'rh' => $request->rh,
+                'estado' => 'activo',
+                'id_usuario' => $user->id_usuario, // Vincula al paciente con el usuario
+            ]);
+        });
 
-        // Crear paciente
-        Paciente::create([
-            'nombre' => $request->nombre,
-            'apellidos' => $request->apellidos,
-            'fecha_nacimiento' => $request->fecha_nacimiento,
-            'correo' => $request->correo,
-            'telefono' => $request->telefono,
-            'direccion' => $request->direccion,
-            'fecha_registro' => now(),
-            'id_usuario' => $usuario->id_usuario,
-            'eps' => $request->eps,
-            'rh' => $request->rh,
-            'estado' => 'activo',
-        ]);
-
-        return redirect()->route('pacientes.index')->with('success', 'Paciente creado correctamente.');
+        return redirect()->route('pacientes.index')
+            ->with('success', 'Paciente y usuario creados correctamente.');
     }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\Paciente  $paciente
+     * @return \Illuminate\Http\Response
+     */
     public function show($id)
-{
-    $paciente = \App\Models\Paciente::where('id_usuario', $id)->firstOrFail();
-    return view('pacientes.show', compact('paciente'));
-}
-
-
-
-    // Formulario para editar
-    public function edit($id)
     {
-        $paciente = Paciente::with('usuario')->findOrFail($id);
+        // Obtiene el ID del usuario autenticado
+        $authUser = Auth::id();
+
+        // Busca el paciente por el ID del usuario. Si no lo encuentra, da un error 404.
+        $paciente = Paciente::where('id_usuario', $id)->firstOrFail();
+
+        // Medida de seguridad: asegura que el usuario solo pueda ver sus propios datos.
+        if ($authUser != $paciente->id_usuario && !in_array(Auth::user()->id_rol, [1, 3])) {
+            abort(403);
+        }
+
+        return view('pacientes.show', compact('paciente'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  \App\Models\Paciente  $paciente
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Paciente $paciente)
+    {
         return view('pacientes.edit', compact('paciente'));
     }
 
-    // Actualizar paciente
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Paciente  $paciente
+     * @return \Illuminate\Http\Response
+     */
     public function update(Request $request, Paciente $paciente)
     {
+        // Verificación de permisos
+        if (Auth::id() != $paciente->id_usuario && Auth::user()->id_rol != 1 && Auth::user()->id_rol != 3) {
+            abort(403, 'Acceso no autorizado.');
+        }
+
         $request->validate([
             'nombre' => 'required|string|max:50',
             'apellidos' => 'required|string|max:50',
-            'fecha_nacimiento' => 'required|date',
-            'correo' => 'required|email|unique:paciente,correo,' . $paciente->id_paciente . ',id_paciente',
-            'telefono' => 'nullable|string|max:15',
+            'correo' => 'required|email|max:100|unique:paciente,correo,' . $paciente->id_paciente . ',id_paciente',
+            'fecha_nacimiento' => 'nullable|date',
             'direccion' => 'nullable|string|max:255',
+            'telefono' => 'nullable|string|max:15',
             'eps' => 'nullable|string|max:50',
             'rh' => 'nullable|string|max:5',
-            'nombre_usuario' => 'required|string|max:255|unique:usuarios,nombre_usuario,' . $paciente->id_usuario . ',id_usuario',
+            'estado' => 'nullable|in:activo,inactivo'
         ]);
 
-        // Actualizar usuario
-        $usuarioData = [
-            'nombre_usuario' => $request->nombre_usuario,
-        ];
+        $paciente->update($request->all());
 
-        if ($request->contraseña) {
-            $usuarioData['contraseña'] = Hash::make($request->contraseña);
-        }
-
-        $paciente->usuario->update($usuarioData);
-
-        // Actualizar paciente
-        $paciente->update([
-    'nombre' => $request->nombre,
-    'apellidos' => $request->apellidos,
-    'fecha_nacimiento' => $request->fecha_nacimiento,
-    'correo' => $request->correo,
-    'direccion' => $request->direccion,
-    'telefono' => $request->telefono,
-    'eps' => $request->eps,
-    'rh' => $request->rh,
-    'estado' => $request->estado, // <-- muy importante
-]);
-
-        return redirect()->route('pacientes.index')->with('success', 'Paciente actualizado correctamente.');
+        // Redirigir al perfil del paciente actualizado
+        return redirect()->route('pacientes.show', $paciente->id_usuario)
+            ->with('success', 'Datos actualizados correctamente.');
     }
 
-    // Inactivar paciente
-    public function destroy($id)
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  \App\Models\Paciente  $paciente
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Paciente $paciente)
     {
-        $paciente = Paciente::findOrFail($id);
-        $paciente->update(['estado' => 'inactivo']);
-        return redirect()->route('pacientes.index')->with('success', 'Paciente inactivado correctamente.');
+        // El botón "Eliminar" ahora cambia el estado a 'inactivo'.
+        $paciente->estado = 'inactivo';
+        $paciente->save();
+
+        return redirect()->route('pacientes.index')
+            ->with('success', 'Paciente desactivado correctamente.');
     }
 
-    // Reactivar paciente
-    public function reactivar($id)
+    /**
+     * Reactiva un paciente de 'inactivo' a 'activo'.
+     *
+     * @param  \App\Models\Paciente  $paciente
+     * @return \Illuminate\Http\Response
+     */
+    public function reactivar(Paciente $paciente)
     {
-        $paciente = Paciente::findOrFail($id);
-        $paciente->update(['estado' => 'activo']);
-        return redirect()->route('pacientes.index')->with('success', 'Paciente reactivado correctamente.');
+        $paciente->estado = 'activo';
+        $paciente->save();
+
+        return redirect()->route('pacientes.index')
+            ->with('success', 'Paciente reactivado correctamente.');
     }
 }

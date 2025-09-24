@@ -40,6 +40,12 @@ class User extends Authenticatable
         return $this->hasOne(Secretaria::class, 'id_usuario', 'id_usuario');
     }
 
+    // 👇 Relación: un usuario puede ser un paciente
+    public function paciente()
+    {
+        return $this->hasOne(Paciente::class, 'id_usuario', 'id_usuario');
+    }
+
     // 👇 Relación: cada usuario tiene un rol
     public function rol()
     {
@@ -49,6 +55,11 @@ class User extends Authenticatable
     public function getAuthPassword()
     {
         return $this->contraseña;
+    }
+
+    public function esAdmin()
+    {
+        return $this->id_rol == 1;
     }
 
 }

@@ -89,13 +89,20 @@
 
         <!-- Botones -->
         <div class="d-flex">
-            <button type="submit" class="btn btn-success me-2">
-                <i class="bi bi-save-fill me-1"></i> Actualizar
-            </button>
-            <a href="{{ route('pacientes.index') }}" class="btn btn-secondary">
-                <i class="bi bi-x-circle me-1"></i> Cancelar
-            </a>
-        </div>
+    <button type="submit" class="btn btn-success me-2">
+        <i class="bi bi-save-fill me-1"></i> Actualizar
+    </button>
+    
+    @if(Auth::user()->id_rol == 4)
+        <a href="{{ route('pacientes.show', Auth::user()->paciente->id_usuario) }}" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-1"></i> Cancelar
+        </a>
+    @else
+        <a href="{{ route('pacientes.index') }}" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-1"></i> Cancelar
+        </a>
+    @endif
+</div>
     </form>
 </div>
 @endsection

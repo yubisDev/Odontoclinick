@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('citas', function (Blueprint $table) {
             $table->integer('id_cita', true);
             $table->integer('id_paciente')->index('id_paciente');
-            $table->integer('id_horario')->index('id_horario');
             $table->dateTime('fecha_horario');
             $table->string('estado', 50);
             $table->text('notas')->nullable();

@@ -4,21 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Secretaria;
 use App\Models\User;
+use App\Models\Cita;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class SecretariaController extends Controller
 {
     // Listado
     public function index()
-{
-    $secretarias_activas = Secretaria::with('usuario')->activas()->get();
-    $secretarias_inactivas = Secretaria::with('usuario')->inactivas()->get();
+    {
+        $secretarias_activas = Secretaria::with('usuario')->activas()->get();
+        $secretarias_inactivas = Secretaria::with('usuario')->inactivas()->get();
 
-    return view('secretarias.index', compact('secretarias_activas', 'secretarias_inactivas'));
-}
-
-
+        return view('secretarias.index', compact('secretarias_activas', 'secretarias_inactivas'));
+    }
 
     // Crear formulario
     public function create()
@@ -43,18 +43,17 @@ class SecretariaController extends Controller
             'nombre_usuario' => $request->nombre_usuario,
             'contraseña' => Hash::make($request->contraseña),
             'id_rol' => 3, // Rol secretaria
-            'estado' => '1', // <-- agregar esto
-
+            'estado' => '1',
         ]);
 
         // Crear secretaria
         Secretaria::create([
             'nombre' => $request->nombre,
             'apellidos' => $request->apellidos,
-            'telefono' => $request->telefono,
-            'fecha_ingreso' => now(),
+            'telefono' => $request->input('telefono', ''),
+            'fecha_ingreso' => $request->input('fecha_ingreso', now()),
             'id_usuario' => $usuario->id_usuario,
-            'estado' => 'activo',
+            'estado' => $request->input('estado', 'activo'),
             'correo' => $request->correo,
         ]);
 
@@ -62,10 +61,29 @@ class SecretariaController extends Controller
     }
 
     // Formulario de edición
-    public function edit($id)
+    public function edit(Secretaria $secretaria)
     {
-        $secretaria = Secretaria::with('usuario')->findOrFail($id);
-        return view('secretarias.edit', compact('secretaria'));
+        // Permitir editar si es secretaria o administrador
+        if (!in_array(auth()->user()->id_rol, [1, 3])) {
+            abort(403, 'Acceso denegado. No tienes permisos para editar secretarias.');
+        }
+
+
+        $secretaria->load('usuario');
+        
+        // Obtener citas futuras (si las hay)
+        $proximasCitas = Cita::with(['paciente', 'medico'])
+            ->where('fecha_horario', '>', Carbon::now())
+            ->orderBy('fecha_horario', 'asc')
+            ->get();
+        
+        // Obtener historial de citas (si las hay)
+        $citasPasadas = Cita::with(['paciente', 'medico'])
+            ->where('fecha_horario', '<=', Carbon::now())
+            ->orderBy('fecha_horario', 'desc')
+            ->get();
+            
+        return view('secretarias.edit', compact('secretaria', 'proximasCitas', 'citasPasadas'));
     }
 
     // Actualizar secretaria
@@ -94,27 +112,37 @@ class SecretariaController extends Controller
         $secretaria->update([
             'nombre' => $request->nombre,
             'apellidos' => $request->apellidos,
-            'telefono' => $request->telefono,
+            'telefono' => $request->input('telefono', $secretaria->telefono),
             'correo' => $request->correo,
-            'estado' => $request->estado,
+            'estado' => $request->input('estado', $secretaria->estado),
         ]);
 
         return redirect()->route('secretarias.index')->with('success', 'Secretaria actualizada correctamente.');
     }
 
     // Inactivar secretaria
-    public function destroy($id)
+    public function destroy(Secretaria $secretaria)
     {
-        $secretaria = Secretaria::findOrFail($id);
+        // Inactivar secretaria
         $secretaria->update(['estado' => 'inactivo']);
-        return redirect()->route('secretarias.index')->with('success', 'Secretaria inactivada correctamente.');
+
+        // Inactivar usuario asociado
+        $secretaria->usuario->update(['estado' => 'inactivo']);
+
+        return redirect()->route('secretarias.index')
+                     ->with('success', 'Secretaria inactivada correctamente.');
     }
 
-    // Reactivar secretaria
-    public function reactivar($id)
-    {
-        $secretaria = Secretaria::findOrFail($id);
+    public function reactivar(Secretaria $secretaria)
+    { 
+        // Reactivar secretaria
         $secretaria->update(['estado' => 'activo']);
-        return redirect()->route('secretarias.index')->with('success', 'Secretaria reactivada correctamente.');
+
+        // Reactivar usuario asociado
+        $secretaria->usuario->update(['estado' => 'activo']);
+
+        return redirect()->route('secretarias.index')
+                     ->with('success', 'Secretaria reactivada correctamente.');
     }
+
 }

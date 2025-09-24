@@ -9,17 +9,34 @@ class Horario extends Model
 {
     use HasFactory;
 
-    protected $table = 'Horarios';
+    protected $table = 'horarios';
     protected $primaryKey = 'id_horarios';
-    protected $fillable = ['hora_inicio', 'hora_fin', 'cant_pacientes', 'id_medico_fk'];
 
+    /**
+     * Indica si el modelo debe ser timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'id_doctor',
+        'dia_semana',
+        'hora_inicio',
+        'hora_fin',
+        'cant_pacientes',
+    ];
+
+    /**
+     * Get the doctor associated with the schedule.
+     */
     public function medico()
     {
-        return $this->belongsTo(Medico::class, 'id_medico_fk');
-    }
-
-    public function citas()
-    {
-        return $this->hasMany(Cita::class, 'id_horario');
+        return $this->belongsTo(Medico::class, 'id_doctor');
     }
 }

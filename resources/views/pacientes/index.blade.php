@@ -8,6 +8,16 @@
         <i class="bi bi-plus-lg me-1"></i> Agregar Paciente
     </a>
 
+    <!-- Barra de búsqueda -->
+    <form method="GET" action="{{ route('pacientes.index') }}" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="search" class="form-control" placeholder="Buscar paciente..." value="{{ request('search') }}">
+            <button class="btn btn-primary" type="submit">
+                <i class="bi bi-search"></i> Buscar
+            </button>
+        </div>
+    </form>
+
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
@@ -15,18 +25,10 @@
     <!-- Pestañas personalizadas -->
     <ul class="nav nav-pills mb-3" id="pacienteTabs" role="tablist">
         <li class="nav-item me-2" role="presentation">
-            <button class="nav-link active fw-bold text-white" 
-                    id="activos-tab" data-bs-toggle="pill" data-bs-target="#activos" type="button"
-                    style="background-color: #0d6efd; border-radius: 50px; transition: all 0.3s;">
-                Activos
-            </button>
+            <button class="nav-link active fw-bold text-white" id="activos-tab" data-bs-toggle="pill" data-bs-target="#activos" type="button" style="background-color: #0d6efd; border-radius: 50px;">Activos</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold text-white" 
-                    id="inactivos-tab" data-bs-toggle="pill" data-bs-target="#inactivos" type="button"
-                    style="background-color: #dc3545; border-radius: 50px; transition: all 0.3s;">
-                Inactivos
-            </button>
+            <button class="nav-link fw-bold text-white" id="inactivos-tab" data-bs-toggle="pill" data-bs-target="#inactivos" type="button" style="background-color: #dc3545; border-radius: 50px;">Inactivos</button>
         </li>
     </ul>
 
@@ -50,16 +52,21 @@
                         @foreach ($pacientes_activas as $paciente)
                             <tr>
                                 <td>{{ $paciente->id_paciente }}</td>
-                                <td>{{ $paciente->nombre }} {{ $paciente->apellidos }}</td>
-                                <td>{{ $paciente->correo }}</td>
-                                <td>{{ $paciente->telefono }}</td>
+                                <td>{!! highlightText($paciente->nombre . ' ' . $paciente->apellidos, request('search')) !!}</td>
+                                <td>{!! highlightText($paciente->correo, request('search')) !!}</td>
+                                <td>{!! highlightText($paciente->telefono, request('search')) !!}</td>
                                 <td>{{ $paciente->eps }}</td>
                                 <td>{{ $paciente->rh }}</td>
                                 <td class="text-center">
-                                    <a href="{{ route('pacientes.edit', $paciente->id_paciente) }}" 
-                                       class="btn btn-primary btn-sm me-1">
+                                    <a href="{{ route('pacientes.edit', $paciente->id_paciente) }}" class="btn btn-primary btn-sm me-1">
                                         <i class="bi bi-pencil-fill"></i>
                                     </a>
+
+                                    <!-- Botón para agregar historial clínico -->
+                                    <a href="{{ route('historial.create', $paciente->id_paciente) }}" class="btn btn-warning btn-sm me-1" title="Agregar historial clínico">
+                                        <i class="bi bi-file-medical-fill"></i>
+                                    </a>
+
                                     <form action="{{ route('pacientes.destroy', $paciente->id_paciente) }}" method="POST" style="display:inline">
                                         @csrf
                                         @method('DELETE')
@@ -94,12 +101,16 @@
                         @foreach ($pacientes_inactivas as $paciente)
                             <tr>
                                 <td>{{ $paciente->id_paciente }}</td>
-                                <td>{{ $paciente->nombre }} {{ $paciente->apellidos }}</td>
-                                <td>{{ $paciente->correo }}</td>
-                                <td>{{ $paciente->telefono }}</td>
+                                <td>{!! highlightText($paciente->nombre . ' ' . $paciente->apellidos, request('search')) !!}</td>
+                                <td>{!! highlightText($paciente->correo, request('search')) !!}</td>
+                                <td>{!! highlightText($paciente->telefono, request('search')) !!}</td>
                                 <td>{{ $paciente->eps }}</td>
                                 <td>{{ $paciente->rh }}</td>
                                 <td class="text-center">
+                                    <a href="{{ route('historial.create', $paciente->id_paciente) }}" class="btn btn-warning btn-sm me-1" title="Agregar historial clínico">
+                                        <i class="bi bi-file-medical-fill"></i>
+                                    </a>
+
                                     <form action="{{ route('pacientes.reactivar', $paciente->id_paciente) }}" method="POST" style="display:inline">
                                         @csrf
                                         <button class="btn btn-success btn-sm">
@@ -116,3 +127,12 @@
     </div>
 </div>
 @endsection
+
+@php
+// Función para resaltar coincidencias
+function highlightText($text, $search)
+{
+    if (!$search) return e($text);
+    return preg_replace('/(' . preg_quote($search, '/') . ')/i', '<mark>$1</mark>', e($text));
+}
+@endphp

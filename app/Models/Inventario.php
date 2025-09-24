@@ -2,19 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Inventario extends Model
 {
-    use HasFactory;
-
-    protected $table = 'Inventario';
+    protected $table = 'inventario';
     protected $primaryKey = 'id_inventario';
-    protected $fillable = ['id_producto', 'cantidad_disponible', 'stock', 'fecha_entrada', 'fecha_salida'];
+    public $timestamps = false; // porque tu tabla no tiene created_at/updated_at
 
+    protected $fillable = [
+        'id_producto',
+        'cantidad_disponible',
+        'stock',
+        'fecha_entrada',
+        'fecha_salida',
+    ];
+
+    // Relación con productos
     public function producto()
     {
-        return $this->belongsTo(Producto::class, 'id_producto');
+        return $this->belongsTo(Producto::class, 'id_producto', 'id_producto');
     }
 }

@@ -6,27 +6,26 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('historial', function (Blueprint $table) {
-            $table->integer('id_historial', true);
-            $table->integer('id_paciente')->index('id_paciente');
-            $table->integer('id_cita')->index('id_cita');
-            $table->date('fecha');
-            $table->text('procedimiento_realizado');
-            $table->integer('id_doctor')->index('id_doctor');
-            $table->text('diagnostico');
+        Schema::table('historial', function (Blueprint $table) {
+            // Hacer id_cita opcional
+            $table->integer('id_cita')->nullable()->change();
+
+            // Agregar la relación foránea
+            $table->foreign('id_cita')
+                  ->references('id_cita')
+                  ->on('citas')
+                  ->onDelete('set null');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('historial');
+        Schema::table('historial', function (Blueprint $table) {
+            $table->dropForeign(['id_cita']);
+            $table->integer('id_cita')->nullable(false)->change();
+        });
     }
 };
+
